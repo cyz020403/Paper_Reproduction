@@ -36,6 +36,10 @@ class Model(nn.Module):
         # eg. [2708, 128] + [2708, 128] -> [2708, 2708]
         between_sim = torch.exp(self.sim(x1, x2) / self.tau)
         refl_sim = torch.exp(self.sim(x1, x1) / self.tau)
+        
+        # between_sim 的对角是每个节点和自己另一个视图的相似度
+        # refl_sim.sum(1) 是每个节点和自己视图的相似度，在 1 维度上求和即把整个矩阵都求和
+        # - refl_sim.diag() 是因为，加上 refl_sim.sum(1) 时，对角线上的元素都加上了，我们只希望“同一个视图中”且“和自己不是同一个节点”的样本对作为负例
         return -torch.log(between_sim.diag() / (refl_sim.sum(1) + between_sim.sum(1) - refl_sim.diag())).mean()
 
     def sim(self, x1, x2):
